@@ -1,110 +1,55 @@
 require 'thread'
-require 'logger'
+require_relative 'common'
+require_relative 'lib'
 
-Log = Logger.new(STDOUT)
-Log.formatter = proc { |severity, datetime, progname, msg|
-  "[#{severity}]#{datetime} - #{msg}\n"
-}
-
-class Razy
-  @@mutex = Mutex.new
-  @@alarm = ConditionVariable.new
-
+module Razy
   @@pool = []
-  @@notify_data = {}
+  @@mutex = Mutex.new
+  @@main_thread_activation = ConditionVariable.new
+  @@task_distribution = ConditionVariable.new
+  @@task_queue = []
+  @@current_task_count = 0
 
-  def self.setup_thread_pool(size = 10)
-    Log.info "Setting up #{size} theads in thread pool..."
+  module_function
+
+  def start(main)
+    main.call
+
+    while @@task_queue.length > 0 or @@current_task_count > 0
+      @@mutex.synchronize do
+        @@main_thread_activation.wait(@@mutex)
+      end
+    end
+  end
+
+  def setup_thread_pool(size = 10)
     size.times do
-      thread = RazyThread.new
+      thread = Thread.new do
+        # worker thread loop
+        while true
+          task = nil
+          @@mutex.synchronize do
+            # threads all waiting on the condition variable
+            @@task_distribution.wait(@@mutex)
+            # get task from queue exclusively once signaled
+            task = @@task_queue.delete_at(0)
+            @@current_task_count += 1
+          end
+
+          # conduct task
+          task.call
+
+          # work done, activate main thread to see is there anything left
+          @@mutex.synchronize do
+            @@current_task_count -= 1
+            @@main_thread_activation.signal
+          end
+        end
+      end
       @@pool << thread
     end
   end
 
-  def self.start(main)
-    # setup all necessary logic
-    Log.debug 'Calling main method'
-    main.call
-
-    # event loop begins
-    while true
-      @@mutex.synchronize do
-        if @@notify_data.values.select{|nd| nd[:status] == :RUNNING}.length > 0
-          Log.debug 'Main thread waiting...'
-          @@alarm.wait(@@mutex)
-          Log.debug 'Main thread wakeup'
-        elsif @@notify_data.values.select{|nd| nd[:status] == :DONE}.length > 0
-          id_to_delete = []
-          @@notify_data.each do |id, nd|
-            if nd[:status] == :DONE
-              Log.debug 'Calling callback...'
-              nd[:callback].call(nd[:data])
-              id_to_delete << id
-            end
-          end
-          id_to_delete.each{|id| @@notify_data.delete(id)}
-        else
-          Log.debug 'Bye'
-          exit # no callback, exit
-        end
-      end
-    end
-  end
-
-  def self.read(file_path, &callback)
-    thread = @@pool[2].run do
-      Log.debug 'Reading file...'
-      file = File.read(file_path)
-      sleep(3)
-      Log.debug "Read file content: #{file}"
-
-      nd = @@notify_data[@@pool[2].__id__]
-      nd[:data] = file
-      nd[:status] = :DONE
-
-      @@mutex.synchronize do
-        @@alarm.signal
-      end
-      Log.debug 'Signaled main thread'
-    end
-
-    @@notify_data[thread.__id__] = {
-      :callback => callback,
-      :data => nil,
-      :status => :RUNNING
-    }
-  end
+  # setup thread pool immediately
+  Razy.setup_thread_pool
 end
-
-class RazyThread
-  def initialize
-    @mutex = Mutex.new
-    @alarm = ConditionVariable.new
-    @task = nil
-
-    @thread = Thread.new do
-      while true
-        @mutex.synchronize do
-          @alarm.wait(@mutex)
-        end
-
-        Log.info 'Calling thread task...'
-        @task.call
-        Log.info 'Thread task finished'
-      end
-    end
-  end
-
-  def run(&task)
-    @task = task
-
-    Log.info 'Waking up thread...'
-    @mutex.synchronize{@alarm.signal}
-  end
-
-  def alive?
-    @thread.alive?
-  end
-end
-
-Razy.setup_thread_pool
