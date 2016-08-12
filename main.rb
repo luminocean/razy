@@ -1,10 +1,9 @@
 require_relative 'razy'
 
 main = proc do
-  # asynchronized read
-  Razy.read('./text') do |err, file1|
-    Razy.read('./text') do |err, file2|
-      puts file1+'*'+file2
+  Razy.read('./text') do |err, file|
+    Razy.write('./text', "#{file}*") do |err|
+      puts 'done!'
     end
     puts 'Hold on...'
   end

@@ -1,6 +1,6 @@
 require 'thread'
 require_relative 'common'
-require_relative 'lib'
+require_relative 'stdlib'
 
 module Razy
   @@pool = []
