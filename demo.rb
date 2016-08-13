@@ -3,8 +3,8 @@
 require_relative 'razy'
 
 main = proc do
-  Razy.read('./text') do |err, file|
-    Razy.write('./text', "#{file}*") do |err|
+  Razy.read_file('./text') do |err, file|
+    Razy.write_file('./text', "#{file}*") do |err|
       puts 'done!'
     end
     puts 'Hold on...'

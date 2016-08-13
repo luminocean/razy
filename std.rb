@@ -4,7 +4,7 @@ require_relative 'common'
 module Razy
   module_function
 
-  def read(file_path, &callback)
+  def read_file(file_path, &callback)
     task = proc do
       begin
         content = File.read(file_path)
@@ -18,7 +18,7 @@ module Razy
     dispatch(task)
   end
 
-  def write(file_path, content, &callback)
+  def write_file(file_path, content, &callback)
     task = proc do
       begin
         file = File.open(file_path, 'w')
