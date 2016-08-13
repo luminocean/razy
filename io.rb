@@ -4,6 +4,8 @@ require_relative 'common'
 module Razy
   module_function
 
+  ### File IO ###
+
   def read_file(file_path, &callback)
     task = proc do
       begin
@@ -40,5 +42,11 @@ module Razy
     @@mutex.synchronize do
       @@task_queue.push(task)
     end
+  end
+
+  ### Network IO ###
+
+  def tcp_server(options)
+
   end
 end

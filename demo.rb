@@ -3,13 +3,13 @@
 require_relative 'razy'
 
 main = proc do
-  Razy.read_file('./text') do |err, file|
-    Razy.write_file('./text', "#{file}*") do |err|
-      puts 'done!'
+  Razy.tcp_server({:port => 8080}) do |err, socket|
+    if err
+      Log.error 'TCP listener failed!'
+    else
+      socket.end('Hi! Nice to meet you!')
     end
-    puts 'Hold on...'
   end
-  puts 'go go go!'
 end
 
 # launch main loop
