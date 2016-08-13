@@ -1,3 +1,5 @@
+#! /usr/bin/env ruby
+
 require_relative 'razy'
 
 main = proc do

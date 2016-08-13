@@ -8,6 +8,7 @@ module Razy
     task = proc do
       begin
         content = File.read(file_path)
+
         callback.call(nil, content)
       rescue => ex
         callback(ex)
@@ -22,6 +23,8 @@ module Razy
       begin
         file = File.open(file_path, 'w')
         file.write(content)
+        file.close
+
         callback.call(nil)
       rescue => ex
         callback(ex)
@@ -33,9 +36,9 @@ module Razy
 
   # dispatch task to threads in thread pool
   def dispatch(task)
+    # simply add task to queue
     @@mutex.synchronize do
       @@task_queue.push(task)
-      @@task_distribution.signal
     end
   end
 end
