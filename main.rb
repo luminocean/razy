@@ -7,7 +7,6 @@ main = proc do
     end
     puts 'Hold on...'
   end
-
   puts 'go go go!'
 end
 
