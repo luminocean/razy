@@ -1,4 +1,6 @@
 require_relative 'common'
+require_relative 'extension/multiplex'
+require_relative 'extension/net'
 
 # This file contains all the standard IO functions
 module Razy
@@ -46,7 +48,16 @@ module Razy
 
   ### Network IO ###
 
-  def tcp_server(options)
+  def tcp_server(options, &socket_handler)
+    server_fd = Razy::Net.create_tcp_server(options[:port])
 
+    # ready to [read] the server_fd
+    Razy::Multiplex.add(server_fd, 1)
+
+    # wait for IO multiplexing
+    nev = Multiplex.wait
+    puts "nev: #{nev}"
+    # client_socket = Razy::Net.accept(server_fd)
+    # socket_handler.call(nil, client_socket)
   end
 end
