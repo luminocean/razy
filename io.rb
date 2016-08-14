@@ -19,7 +19,7 @@ module Razy
       end
     end
 
-    dispatch(task)
+    bio_dispatch(task)
   end
 
   def write_file(file_path, content, &callback)
@@ -35,11 +35,11 @@ module Razy
       end
     end
 
-    dispatch(task)
+    bio_dispatch(task)
   end
 
-  # dispatch task to threads in thread pool
-  def dispatch(task)
+  # dispatch task to threads in thread pool to handle blocking IO
+  def bio_dispatch(task)
     # simply add task to queue
     @@mutex.synchronize do
       @@task_queue.push(task)
@@ -56,8 +56,9 @@ module Razy
 
     # wait for IO multiplexing
     nev = Multiplex.wait
-    puts "nev: #{nev}"
-    # client_socket = Razy::Net.accept(server_fd)
-    # socket_handler.call(nil, client_socket)
+
+    # get socket client
+    client_socket = Razy::Net.accept(server_fd)
+    socket_handler.call(nil, client_socket)
   end
 end

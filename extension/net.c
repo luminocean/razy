@@ -26,6 +26,17 @@ int create_tcp_server(int port){
     return server_fd;
 }
 
+int accept_client_socket(int server_fd){
+    struct sockaddr_in addr;
+    socklen_t client_len = sizeof(addr);
+
+    int client_fd;
+    if( (client_fd = accept(server_fd, (struct sockaddr *)&addr, &client_len)) < 0 )
+        quit("accept error");
+
+    return client_fd;
+}
+
 int main(){
     int server_fd = create_tcp_server(8080);
     printf("Server fd: %d", server_fd);

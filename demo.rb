@@ -7,7 +7,8 @@ main = proc do
     if err
       Log.error 'TCP listener failed!'
     else
-      socket.end('Hi! Nice to meet you!')
+      Log.info 'In socket handler!'
+      # socket.end('Hi! Nice to meet you!')
     end
   end
 end
