@@ -48,14 +48,12 @@ module Razy
 
   ### Network IO ###
 
-  def tcp_server(options, &socket_handler)
+  def tcp_server(options, &handler)
     server_fd = Razy::Net.create_tcp_server(options[:port])
     server_socket_handler = proc do
-      Log.info 'GREAT! ready for accpeting'
-
       # accept incoming client socket without blocking
       client_socket = Razy::Net.accept(server_fd)
-      socket_handler.call(nil, client_socket)
+      handler.call(nil, client_socket)
     end
 
     # register task before add fd to IO multiplexing

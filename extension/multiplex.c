@@ -42,7 +42,6 @@ int quit(const char *msg){
 /**
  * main functions
  */
-
 // initialize IO multiplexing functionalities
 // this function must be called before any other subsequent calls
 void multiplex_initialize(){
@@ -74,7 +73,6 @@ int multiplex_wait(){
     for(i=0; i<nev; i++){
         struct kevent event = events[i];
         if( event.flags & EV_ERROR ){
-            // quit("kevent event error");
             quit(strerror(event.data));
         }
         ready_fds[i] = (int)event.ident;
@@ -86,26 +84,3 @@ int multiplex_wait(){
 int multiplex_ready_fd(int index){
     return ready_fds[index];
 }
-
-//void sig_handler(int signum){
-//    printf("Received signal %d\n", signum);
-//}
-//
-//
-//int main(){
-//    // signal(SIGUSR1, sig_handler);
-//
-//    puts("Hi");
-//    pid_t pid = getpid();
-//    printf("pid: %d\n", pid);
-//    fsync(STDOUT_FILENO);
-//
-//    if( (kq = kqueue()) == -1 ) quit("kqueue error");
-//    turn_on_flags(STDIN_FILENO, O_NONBLOCK);
-//    EV_SET(&changes[k++], STDIN_FILENO, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, 0);
-//    puts("waiting...");
-//    int nev = kevent(kq, changes, k, events, MAX_FD_NUM, NULL);
-//    puts("hey!");
-//    printf("EINTR: %d | acutal: %d", EINTR, errno);
-//    return 0;
-//}

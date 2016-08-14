@@ -10,7 +10,7 @@ module Razy
     ffi_lib File.join(File.dirname(__FILE__) + '/multiplex.so')
     attach_function(:multiplex_initialize, [], :void)
     attach_function(:multiplex_set, [:pointer,:pointer, :int], :void)
-    attach_function(:multiplex_wait, [], :int)
+    attach_function(:multiplex_wait, [], :int, :blocking => true)
     attach_function(:multiplex_ready_fd, [:int], :int)
 
     # initialize IO multiplex functionality immediately
@@ -59,13 +59,13 @@ module Razy
 
     def start_loop_thread
       Thread.new do
-        # a dead loop
-        # once got a ready event, call its coresponding task back
+        # an infinite loop
+        # once got a ready event, call its corresponding task back
         while true
           Log.debug 'multiplex waiting...'
-          Log.debug "#{waiting_fds.length} events to wait..."
           nev = multiplex_wait
           Log.debug 'multiplex waiting finished'
+
           (0...nev).each do |i|
             fd = multiplex_ready_fd(i)
             task = @@fd_task_map[fd]
