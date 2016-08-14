@@ -8,7 +8,10 @@ main = proc do
       Log.error 'TCP listener failed!'
     else
       Log.info 'In socket handler!'
-      # socket.end('Hi! Nice to meet you!')
+
+      socket.end("Perfect! Nice to meet you!\n") do |err|
+        Log.info 'Message successfully sent!'
+      end
     end
   end
 end

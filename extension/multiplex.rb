@@ -28,6 +28,19 @@ module Razy
       @@fd_task_map[fd] = task
       @@fd_mode_map[fd] = mode
 
+      update_multiplex
+    end
+
+    # remember to call this method once a fd is closed
+    # otherwise waiting for a closed fd will cause an error
+    def unregister(fd)
+      @@fd_task_map.delete(fd)
+      @@fd_mode_map.delete(fd)
+
+      update_multiplex
+    end
+
+    def update_multiplex
       # reset kqueue listening array in C space
       fds = []
       modes = []
@@ -37,7 +50,7 @@ module Razy
       end
 
       multiplex_set(to_ffi_int_array(fds), to_ffi_int_array(modes), fds.length)
-      Log.debug 'Registers updated'
+      Log.debug 'Registered fds updated'
     end
 
     def start_loop_thread
@@ -46,9 +59,9 @@ module Razy
         # a dead loop
         # once got a ready event, call its coresponding task back
         while true
-          Log.debug '1'
+          Log.debug 'multiplex waiting...'
           nev = multiplex_wait
-          Log.debug '2'
+          Log.debug 'multiplex waiting finished'
           (0...nev).each do |i|
             fd = multiplex_ready_fd(i)
             task = @@fd_task_map[fd]

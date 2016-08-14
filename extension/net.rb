@@ -4,16 +4,21 @@ module Razy
   module Net
     # client socket object for easier user usage
     class Socket
-      def read
-
+      def initialize(fd)
+        @fd = fd
+        @io = IO.new(fd, mode: 'r+')
       end
 
-      def write
+      def end(message, &callback)
+        end_handler = proc do
+          @io.write(message)
+          @io.close
+          # once closed a fd, remember to remove it from kqueue list
+          Razy::Multiplex.unregister(@fd)
 
-      end
-
-      def end
-
+          callback.call(nil)
+        end
+        Razy::Multiplex.register(@fd, 2, end_handler)
       end
     end
 
@@ -33,6 +38,9 @@ module Razy
     def accept(server_socket_fd)
       client_sokect_fd = accept_client_socket(server_socket_fd)
       Log.info "client socket fd: #{client_sokect_fd}"
+
+      socket = Net::Socket.new(client_sokect_fd)
+      socket
     end
   end
 end

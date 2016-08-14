@@ -70,10 +70,14 @@ void multiplex_set(int *fd, int *mode, int n){
 // returns ready_fds's size
 int multiplex_wait(){
     int nev = kevent(kq, changes, k, events, MAX_FD_NUM, NULL);
+    printf("nev = %d\n", nev);
     int i;
     for(i=0; i<nev; i++){
         struct kevent event = events[i];
-        if( event.flags & EV_ERROR ) quit("Event error");
+        if( event.flags & EV_ERROR ){
+            // quit("kevent event error");
+            quit(strerror(event.data));
+        }
         ready_fds[i] = (int)event.ident;
     }
     return nev;
