@@ -12,10 +12,7 @@ module Razy
       def end(message, &callback)
         end_handler = proc do
           @io.write(message)
-          @io.close
-          # once closed a fd, remember to remove it from kqueue list
-          Razy::Multiplex.unregister(@fd)
-
+          Razy::Net::close(@io)
           callback.call(nil)
         end
         Razy::Multiplex.register(@fd, 2, end_handler)
@@ -39,8 +36,20 @@ module Razy
       client_sokect_fd = accept_client_socket(server_socket_fd)
       Log.info "client socket fd: #{client_sokect_fd}"
 
-      socket = Net::Socket.new(client_sokect_fd)
-      socket
+      Net::Socket.new(client_sokect_fd)
+    end
+
+    # close an io object whose file descriptor was used to be handled by IO multiplexing
+    def close(io)
+      # once closed a fd, remember to remove it from kqueue list
+      # otherwise IO multiplexing will will wait on it which will cause an error
+      Razy::Multiplex.unregister(io.fileno)
+      # close this io object (the file descriptor underneath it in fact)
+      io.close
+      # signal the main thread just in case
+      if Razy::Multiplex.waiting_fds.length == 0
+        Razy.wakeup
+      end
     end
   end
 end

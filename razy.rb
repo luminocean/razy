@@ -31,7 +31,7 @@ module Razy
         end
       end
 
-      if @@flying_task_count > 0
+      if @@flying_task_count > 0 or Razy::Multiplex.waiting_fds.length > 0
         # some tasks are still running, waiting for them to complete
         @@mutex.synchronize do
           @@main_thread_activation.wait(@@mutex, MAX_WAIT_TIME)
@@ -40,6 +40,10 @@ module Razy
         return # no running task, exit
       end
     end
+  end
+
+  def wakeup
+    @@main_thread_activation.signal
   end
 
   def setup_thread_pool(size = 10)
@@ -58,7 +62,7 @@ module Razy
             @@flying_task_count += 1
 
             # signal the main thread once the task has been taken cared of
-            @@main_thread_activation.signal
+            wakeup
           end
 
           # conduct task separately
@@ -78,9 +82,6 @@ module Razy
   end
 
   def setup_multiplex_loop
-    # temporarily keep main thread from aborting
-    @@flying_task_count += 1
-
     Razy::Multiplex.start_loop_thread
   end
 

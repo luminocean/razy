@@ -53,21 +53,23 @@ module Razy
       Log.debug 'Registered fds updated'
     end
 
+    def waiting_fds
+      @@fd_task_map.keys
+    end
+
     def start_loop_thread
-      Log.debug '0'
       Thread.new do
         # a dead loop
         # once got a ready event, call its coresponding task back
         while true
           Log.debug 'multiplex waiting...'
+          Log.debug "#{waiting_fds.length} events to wait..."
           nev = multiplex_wait
           Log.debug 'multiplex waiting finished'
           (0...nev).each do |i|
             fd = multiplex_ready_fd(i)
             task = @@fd_task_map[fd]
             task.call
-
-            # return # sudden death
           end
         end
       end

@@ -51,7 +51,7 @@ module Razy
   def tcp_server(options, &socket_handler)
     server_fd = Razy::Net.create_tcp_server(options[:port])
     server_socket_handler = proc do
-      puts 'GREAT! ready for accpeting'
+      Log.info 'GREAT! ready for accpeting'
 
       # accept incoming client socket without blocking
       client_socket = Razy::Net.accept(server_fd)
