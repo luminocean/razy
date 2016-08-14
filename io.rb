@@ -50,15 +50,15 @@ module Razy
 
   def tcp_server(options, &socket_handler)
     server_fd = Razy::Net.create_tcp_server(options[:port])
+    server_socket_handler = proc do
+      puts 'GREAT! ready for accprting'
 
-    # ready to [read] the server_fd
-    Razy::Multiplex.add(server_fd, 1)
+      # accept incoming client socket without blocking
+      client_socket = Razy::Net.accept(server_fd)
+      socket_handler.call(nil, client_socket)
+    end
 
-    # wait for IO multiplexing
-    nev = Multiplex.wait
-
-    # get socket client
-    client_socket = Razy::Net.accept(server_fd)
-    socket_handler.call(nil, client_socket)
+    # register task before add fd to IO multiplexing
+    Razy::Multiplex.register(server_fd, 1, server_socket_handler)
   end
 end

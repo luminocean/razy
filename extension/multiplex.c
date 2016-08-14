@@ -3,15 +3,18 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/event.h>
+#include <sys/types.h>
+#include <errno.h>
+#include <string.h>
 #include <errno.h>
 #include <string.h>
 
-const static int FD_NUM = 1024;
+const static int MAX_FD_NUM = 1024;
 const static int BUFFER_SIZE = 1024;
 
-struct kevent changes[FD_NUM];
-struct kevent events[FD_NUM];
-int ready_fds[FD_NUM];
+struct kevent changes[MAX_FD_NUM];
+struct kevent events[MAX_FD_NUM];
+int ready_fds[MAX_FD_NUM];
 
 int k = 0; // next kevent object index
 int kq; // a kqueue object
@@ -46,24 +49,27 @@ void multiplex_initialize(){
     if( (kq = kqueue()) == -1 ) quit("kqueue error");
 }
 
-// add a file descriptor into the kqueue with specified mode
-// mode 1 is for read, 2 is for write
-// so 1 | 2 indicates both reading and writing
-void multiplex_add(int fd, int mode){
-    int ev_mode = 0;
-    int i = 1;
-    if( mode & i ) ev_mode |= EVFILT_READ;
-    i = i << 1;
-    if( mode & i ) ev_mode |= EVFILT_WRITE;
+// set file descriptors in the kqueue with specified mode
+// mode 1 is for read, 2 is for write, so 1 | 2 indicates both reading and writing
+void multiplex_set(int *fd, int *mode, int n){
+    k = 0; // reset the index k
 
-    if( k == FD_NUM ) quit("fd queue overflow");
+    int i;
+    for(i=0; i<n; i++){
+        int ev_mode = 0;
+        int j = 1;
+        if( mode[i] & j ) ev_mode |= EVFILT_READ;
+        j = j << 1;
+        if( mode[i] & j ) ev_mode |= EVFILT_WRITE;
 
-    EV_SET(&changes[k++], fd, ev_mode, EV_ADD | EV_ENABLE, 0, 0, 0);
+        if( k == MAX_FD_NUM ) quit("fd queue overflow");
+        EV_SET(&changes[k++], fd[i], ev_mode, EV_ADD | EV_ENABLE, 0, 0, 0);
+    }
 }
 
 // returns ready_fds's size
 int multiplex_wait(){
-    int nev = kevent(kq, changes, k, events, FD_NUM, NULL);
+    int nev = kevent(kq, changes, k, events, MAX_FD_NUM, NULL);
     int i;
     for(i=0; i<nev; i++){
         struct kevent event = events[i];
@@ -77,3 +83,26 @@ int multiplex_wait(){
 int multiplex_ready_fd(int index){
     return ready_fds[index];
 }
+
+//void sig_handler(int signum){
+//    printf("Received signal %d\n", signum);
+//}
+//
+//
+//int main(){
+//    // signal(SIGUSR1, sig_handler);
+//
+//    puts("Hi");
+//    pid_t pid = getpid();
+//    printf("pid: %d\n", pid);
+//    fsync(STDOUT_FILENO);
+//
+//    if( (kq = kqueue()) == -1 ) quit("kqueue error");
+//    turn_on_flags(STDIN_FILENO, O_NONBLOCK);
+//    EV_SET(&changes[k++], STDIN_FILENO, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, 0);
+//    puts("waiting...");
+//    int nev = kevent(kq, changes, k, events, MAX_FD_NUM, NULL);
+//    puts("hey!");
+//    printf("EINTR: %d | acutal: %d", EINTR, errno);
+//    return 0;
+//}
