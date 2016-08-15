@@ -1,20 +1,14 @@
 require 'ffi'
 
+###
+# C wrapper for IO multiplexing functionality
+###
+
 module Razy
   module Multiplex
     READ_BUFFER_SIZE = 1024
 
     @@mutex = Mutex.new
-
-    extend FFI::Library
-    ffi_lib File.join(File.dirname(__FILE__) + '/multiplex.so')
-    attach_function(:multiplex_initialize, [], :void)
-    attach_function(:multiplex_set, [:pointer,:pointer, :int], :void)
-    attach_function(:multiplex_wait, [], :int, :blocking => true)
-    attach_function(:multiplex_ready_fd, [:int], :int)
-
-    # initialize IO multiplex functionality immediately
-    multiplex_initialize
 
     module_function
 
@@ -40,23 +34,6 @@ module Razy
       update_multiplex
     end
 
-    def update_multiplex
-      # reset kqueue listening array in C space
-      fds = []
-      modes = []
-      @@fd_mode_map.each do |fd, mode|
-        fds.push(fd)
-        modes.push(mode)
-      end
-
-      multiplex_set(to_ffi_int_array(fds), to_ffi_int_array(modes), fds.length)
-      Log.debug 'Registered fds updated'
-    end
-
-    def waiting_fds
-      @@fd_task_map.keys
-    end
-
     def start_loop_thread
       Thread.new do
         # an infinite loop
@@ -75,11 +52,43 @@ module Razy
       end
     end
 
+    private_class_method
+
+    # make the IO multiplexing wait for fds in @@fd_mode_map
+    def update_multiplex
+      fds = []
+      modes = []
+      @@fd_mode_map.each do |fd, mode|
+        fds.push(fd)
+        modes.push(mode)
+      end
+
+      multiplex_set(to_ffi_int_array(fds), to_ffi_int_array(modes), fds.length)
+      Log.debug 'Registered fds updated'
+    end
+
     # convert a ruby array into a fii compatible C-array pointer
     def to_ffi_int_array(array)
       pointer = FFI::MemoryPointer.new :int, array.length
       pointer.put_array_of_int(0, array)
       pointer
     end
+
+    # return fds the IO multiplexing is waiting for
+    def waiting_fds
+      @@fd_task_map.keys
+    end
+
+    def load_c_extension
+      extend FFI::Library
+      ffi_lib File.join(File.dirname(__FILE__) + '/multiplex.so')
+      attach_function(:multiplex_initialize, [], :void)
+      attach_function(:multiplex_set, [:pointer,:pointer, :int], :void)
+      attach_function(:multiplex_wait, [], :int, :blocking => true)
+      attach_function(:multiplex_ready_fd, [:int], :int)
+
+      multiplex_initialize
+    end
+    load_c_extension
   end
 end

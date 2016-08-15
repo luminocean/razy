@@ -2,7 +2,8 @@ require_relative 'common'
 require_relative 'extension/multiplex'
 require_relative 'extension/network'
 
-# This file contains all the standard IO functions
+# IO library for Razy
+
 module Razy
   module_function
 
@@ -38,14 +39,6 @@ module Razy
     bio_dispatch(task)
   end
 
-  # dispatch task to threads in thread pool to handle blocking IO
-  def bio_dispatch(task)
-    # simply add task to queue
-    @@mutex.synchronize do
-      @@task_queue.push(task)
-    end
-  end
-
   ### Network IO ###
 
   def tcp_server(options, &handler)
@@ -58,5 +51,15 @@ module Razy
 
     # register task before add fd to IO multiplexing
     Razy::Multiplex.register(server_fd, 1, server_socket_handler)
+  end
+
+  private_class_method
+
+  # dispatch task to threads in thread pool to handle blocking IO
+  def bio_dispatch(task)
+    # simply add task to queue
+    @@mutex.synchronize do
+      @@task_queue.push(task)
+    end
   end
 end

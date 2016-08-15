@@ -29,4 +29,8 @@ describe 'Test File IO' do
 
     test_async(test_case)
   end
+
+  after do
+    File.unlink(test_file_path)
+  end
 end

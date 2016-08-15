@@ -38,8 +38,10 @@ describe 'Test TCP socket' do
       sleep 1
     end
 
-    Socket.tcp("localhost", PORT) do |sock|
-      assert_equal(TEST_TEXT, sock.read)
+    100.times do
+      Socket.tcp("localhost", PORT) do |sock|
+        assert_equal(TEST_TEXT, sock.read)
+      end
     end
   end
 

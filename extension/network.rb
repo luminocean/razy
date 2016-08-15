@@ -1,5 +1,9 @@
 require 'ffi'
 
+###
+# C wrapper for network functionality
+###
+
 module Razy
   module Network
     # client socket object for easier user usage
@@ -21,23 +25,17 @@ module Razy
 
     module_function
 
-    def load_c_extension
-      extend FFI::Library
-      ffi_lib File.join(File.dirname(__FILE__) + '/network.so')
-
-      attach_function(:create_tcp_server, [:int], :int)
-      attach_function(:accept_client_socket, [:int], :int)
-    end
-
-    # load c functions asap
-    load_c_extension
-
+    # accept a client socket from given server socket fd
+    # please make sure the server socket is ready for accepting
+    # otherwise this method would be blocked unexpectedly
     def accept(server_socket_fd)
       client_sokect_fd = accept_client_socket(server_socket_fd)
       Log.info "client socket fd: #{client_sokect_fd}"
 
       Razy::Network::Socket.new(client_sokect_fd)
     end
+
+    private_class_method
 
     # close an io object whose file descriptor was used to be handled by IO multiplexing
     def close(io)
@@ -51,5 +49,14 @@ module Razy
         Razy.wakeup
       end
     end
+
+    def load_c_extension
+      extend FFI::Library
+      ffi_lib File.join(File.dirname(__FILE__) + '/network.so')
+
+      attach_function(:create_tcp_server, [:int], :int)
+      attach_function(:accept_client_socket, [:int], :int, :blocking => true)
+    end
+    load_c_extension # load c functions asap
   end
 end
