@@ -1,10 +1,10 @@
-all: net.so multiplex.so
+all: network.so multiplex.so
 
-net.so: net.o
-	gcc net.o -shared -o net.so
+network.so: network.o
+	gcc network.o -shared -o network.so
 
-net.o: net.c
-	gcc -c -fPIC net.c -o net.o
+network.o: network.c
+	gcc -c -fPIC network.c -o network.o
 
 multiplex.so: multiplex.o
 	gcc multiplex.o -shared -o multiplex.so

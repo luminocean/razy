@@ -1,7 +1,7 @@
 require 'ffi'
 
 module Razy
-  module Net
+  module Network
     # client socket object for easier user usage
     class Socket
       def initialize(fd)
@@ -12,7 +12,7 @@ module Razy
       def end(message, &callback)
         end_handler = proc do
           @io.write(message)
-          Razy::Net::close(@io)
+          Razy::Network::close(@io)
           callback.call(nil)
         end
         Razy::Multiplex.register(@fd, 2, end_handler)
@@ -23,7 +23,7 @@ module Razy
 
     def load_c_extension
       extend FFI::Library
-      ffi_lib File.join(File.dirname(__FILE__) + '/net.so')
+      ffi_lib File.join(File.dirname(__FILE__) + '/network.so')
 
       attach_function(:create_tcp_server, [:int], :int)
       attach_function(:accept_client_socket, [:int], :int)
@@ -36,7 +36,7 @@ module Razy
       client_sokect_fd = accept_client_socket(server_socket_fd)
       Log.info "client socket fd: #{client_sokect_fd}"
 
-      Net::Socket.new(client_sokect_fd)
+      Razy::Network::Socket.new(client_sokect_fd)
     end
 
     # close an io object whose file descriptor was used to be handled by IO multiplexing
