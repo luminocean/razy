@@ -66,7 +66,9 @@ module Razy
         fds.push(fd)
 
         mode = 0
-        mode_map.keys.each{|m| mode |= m}
+        mode_map.keys.each do |m|
+          mode |= m
+        end
 
         modes.push(mode)
       end

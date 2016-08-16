@@ -58,13 +58,16 @@ void multiplex_set(int *fd, int *mode, int n){
     int i;
     for(i=0; i<n; i++){
         int ev_mode = 0;
-        int j = 1;
-        if( mode[i] & j ) ev_mode |= EVFILT_READ;
-        j = j << 1;
-        if( mode[i] & j ) ev_mode |= EVFILT_WRITE;
-
+        // set read
         if( k == MAX_FD_NUM ) quit("fd queue overflow");
-        EV_SET(&changes[k++], fd[i], ev_mode, EV_ADD | EV_ENABLE, 0, 0, 0);
+        if( mode[i] & 1 ){
+            EV_SET(&changes[k++], fd[i], EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, 0);
+        }
+        // set write
+        if( k == MAX_FD_NUM ) quit("fd queue overflow");
+        if( mode[i] & 2 ){
+            EV_SET(&changes[k++], fd[i], EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, 0);
+        }
     }
 }
 
@@ -80,8 +83,8 @@ int multiplex_wait(){
         ready_fds[i] = (int)event.ident;
 
         int mode = 0;
-        if(event.filter & EVFILT_READ) mode = mode | 1;
-        if(event.filter & EVFILT_WRITE) mode = mode | 2;
+        if(event.filter == EVFILT_READ) mode = 1;
+        if(event.filter == EVFILT_WRITE) mode = 2;
         ready_fd_modes[i] = mode;
     }
     return nev;

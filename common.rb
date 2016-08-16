@@ -12,5 +12,6 @@ Log.formatter = proc { |severity, datetime, progname, msg|
 Thread.abort_on_exception = true
 
 trap 'SIGINT' do
+  # quit on SIGINT silently
   exit(0)
 end

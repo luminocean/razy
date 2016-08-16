@@ -36,18 +36,3 @@ int accept_client_socket(int server_fd){
 
     return client_fd;
 }
-
-int main(){
-    int server_fd = create_tcp_server(8080);
-    printf("Server fd: %d", server_fd);
-
-    struct sockaddr_in addr;
-    socklen_t client_len = sizeof(addr);
-
-    int client_fd;
-    if( (client_fd = accept(server_fd, (struct sockaddr *)&addr, &client_len)) < 0 )
-        quit("accept error");
-
-    puts("Boom!");
-    return 0;
-}
