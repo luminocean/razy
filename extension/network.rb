@@ -13,11 +13,19 @@ module Razy
         @io = IO.new(fd, mode: 'r+')
       end
 
+      def read(&callback)
+        read_handler = proc do
+          content = @io.read_nonblock(1024)
+          callback.call(nil, content) if block_given?
+        end
+        Razy::Multiplex.register(@fd, 1, read_handler)
+      end
+
       def end(message, &callback)
         end_handler = proc do
           @io.write(message)
           Razy::Network::close(@io)
-          callback.call(nil)
+          callback.call(nil) if block_given?
         end
         Razy::Multiplex.register(@fd, 2, end_handler)
       end

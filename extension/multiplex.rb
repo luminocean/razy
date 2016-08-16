@@ -12,15 +12,12 @@ module Razy
 
     module_function
 
-    # fd to its callback task
-    @@fd_task_map = {}
-    # fd to its mode
-    @@fd_mode_map = {}
+    @@fd_map = {}
 
     # register a file descriptor and its mode with related callback proc
     def register(fd, mode, task)
-      @@fd_task_map[fd] = task
-      @@fd_mode_map[fd] = mode
+      @@fd_map[fd] ||= {}
+      @@fd_map[fd][mode] = task
 
       update_multiplex
     end
@@ -28,8 +25,7 @@ module Razy
     # remember to call this method once a fd is closed
     # otherwise waiting for a closed fd will cause an error
     def unregister(fd)
-      @@fd_task_map.delete(fd)
-      @@fd_mode_map.delete(fd)
+      @@fd_map.delete(fd)
 
       update_multiplex
     end
@@ -45,7 +41,15 @@ module Razy
 
           (0...nev).each do |i|
             fd = multiplex_ready_fd(i)
-            task = @@fd_task_map[fd]
+            mode = multiplex_ready_fd_mode(i)
+
+            task = nil
+            @@fd_map[fd].each do |key, value|
+              if key & mode > 0
+                task = value
+                break
+              end
+            end
             task.call
           end
         end
@@ -58,8 +62,12 @@ module Razy
     def update_multiplex
       fds = []
       modes = []
-      @@fd_mode_map.each do |fd, mode|
+      @@fd_map.each do |fd, mode_map|
         fds.push(fd)
+
+        mode = 0
+        mode_map.keys.each{|m| mode |= m}
+
         modes.push(mode)
       end
 
@@ -76,7 +84,7 @@ module Razy
 
     # return fds the IO multiplexing is waiting for
     def waiting_fds
-      @@fd_task_map.keys
+      @@fd_map.keys
     end
 
     def load_c_extension
@@ -86,6 +94,7 @@ module Razy
       attach_function(:multiplex_set, [:pointer,:pointer, :int], :void)
       attach_function(:multiplex_wait, [], :int, :blocking => true)
       attach_function(:multiplex_ready_fd, [:int], :int)
+      attach_function(:multiplex_ready_fd_mode, [:int], :int)
 
       multiplex_initialize
     end

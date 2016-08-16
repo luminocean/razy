@@ -14,7 +14,9 @@ const static int BUFFER_SIZE = 1024;
 
 struct kevent changes[MAX_FD_NUM];
 struct kevent events[MAX_FD_NUM];
+
 int ready_fds[MAX_FD_NUM];
+int ready_fd_modes[MAX_FD_NUM];
 
 int k = 0; // next kevent object index
 int kq; // a kqueue object
@@ -76,6 +78,11 @@ int multiplex_wait(){
             quit(strerror(event.data));
         }
         ready_fds[i] = (int)event.ident;
+
+        int mode = 0;
+        if(event.filter & EVFILT_READ) mode = mode | 1;
+        if(event.filter & EVFILT_WRITE) mode = mode | 2;
+        ready_fd_modes[i] = mode;
     }
     return nev;
 }
@@ -83,4 +90,9 @@ int multiplex_wait(){
 // expose ready_fds to ruby code
 int multiplex_ready_fd(int index){
     return ready_fds[index];
+}
+
+// expose ready_fd_modes to ruby code
+int multiplex_ready_fd_mode(int index){
+    return ready_fd_modes[index];
 }

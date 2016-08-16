@@ -10,7 +10,7 @@ server_pid = fork do
   main = proc do
     Razy.tcp_server({:port => PORT}) do |err, socket|
       fail 'TCP listener failed!' if err
-      socket.end(TEST_TEXT){}
+      socket.end(TEST_TEXT)
     end
   end
 
