@@ -7,7 +7,9 @@ require_relative 'extension/network'
 module Razy
   module_function
 
-  ### File IO ###
+  ###
+  # File IO
+  ###
 
   def read_file(file_path, &callback)
     task = proc do
@@ -39,17 +41,21 @@ module Razy
     bio_dispatch(task)
   end
 
-  ### Network IO ###
+  ###
+  # Network IO
+  ###
 
   def tcp_server(options, &handler)
     server_fd = Razy::Network.create_tcp_server(options[:port])
+    # once a client try to connect this server process
     server_socket_handler = proc do
-      # accept incoming client socket without blocking
+      # accept incoming client socket
+      # this is supposed to be non-blocking
       client_socket = Razy::Network.accept(server_fd)
       handler.call(nil, client_socket)
     end
 
-    # register task before add fd to IO multiplexing
+    # register the server fd in read mode
     Razy::Multiplex.register(server_fd, 1, server_socket_handler)
   end
 

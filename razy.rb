@@ -9,7 +9,10 @@ module Razy
   @@mutex = Mutex.new
   @@main_thread_activation = ConditionVariable.new
   @@task_distribution = ConditionVariable.new
+
+  # queue of tasks to be handled
   @@task_queue = []
+  # how many task are being processed
   @@flying_task_count = 0
 
   module_function
@@ -20,7 +23,7 @@ module Razy
     main.call
 
     while true
-      # as long as any task is waiting in the queue
+      # as long as there's any task waiting in the queue
       # signal a worker thread to handle a task
       while @@task_queue.length > 0
         @@mutex.synchronize do
@@ -32,7 +35,8 @@ module Razy
       end
 
       if @@flying_task_count > 0 or Razy::Multiplex.waiting_fds.length > 0
-        # some tasks are still running, waiting for them to complete
+        # some tasks are still running or waiting on IO multiplexing
+        # waiting for them to complete
         @@mutex.synchronize do
           @@main_thread_activation.wait(@@mutex, MAX_WAIT_TIME)
         end
@@ -40,10 +44,6 @@ module Razy
         return # no running task, exit
       end
     end
-  end
-
-  def wakeup
-    @@main_thread_activation.signal
   end
 
   def setup_thread_pool(size = 10)
@@ -85,7 +85,11 @@ module Razy
     Razy::Multiplex.start_loop_thread
   end
 
-  # set up thread pool immediately
+  def wakeup
+    @@main_thread_activation.signal
+  end
+
+  # set up thread pool and multiplex loop immediately
   Razy.setup_thread_pool
   Razy.setup_multiplex_loop
 end

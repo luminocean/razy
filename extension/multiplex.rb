@@ -14,7 +14,8 @@ module Razy
 
     @@fd_map = {}
 
-    # register a file descriptor and its mode with related callback proc
+    # register a file descriptor and its mode
+    # with related callback proc
     def register(fd, mode, task)
       @@fd_map[fd] ||= {}
       @@fd_map[fd][mode] = task
@@ -31,6 +32,7 @@ module Razy
     end
 
     def start_loop_thread
+      # one thread for IO multiplexing is enough
       Thread.new do
         # an infinite loop
         # once got a ready event, call its corresponding task back
