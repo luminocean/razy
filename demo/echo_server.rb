@@ -7,8 +7,8 @@ main = proc do
     socket.read do |err, content|
       fail "socket read error: #{err}" if err
 
-      Log.info "content: #{content}"
-      socket.end(content)
+      # echo
+      socket.write(content)
     end
   end
 end

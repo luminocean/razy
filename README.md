@@ -32,7 +32,8 @@ main = proc do
     socket.read do |err, content|
       fail "socket read error: #{err}" if err
 
-      socket.end(content)
+      # echo
+      socket.write(content)
     end
   end
 end
@@ -49,5 +50,8 @@ Connected to localhost.
 Escape character is '^]'.
 hello!
 hello!
-Connection closed by foreign host.
+Have a nice day!
+Have a nice day!
+^]
+telnet> ^C
 ```

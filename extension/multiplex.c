@@ -55,6 +55,9 @@ void multiplex_initialize(){
 void multiplex_set(int *fd, int *mode, int n){
     k = 0; // reset the index k
 
+    // reset changes list
+    memset(changes, 0, sizeof(struct kevent) * MAX_FD_NUM);
+
     int i;
     for(i=0; i<n; i++){
         int ev_mode = 0;
@@ -71,9 +74,26 @@ void multiplex_set(int *fd, int *mode, int n){
     }
 }
 
+void multiplex_unregister(int fd, int mode){
+    memset(ready_fds, 0, sizeof(int) * MAX_FD_NUM);
+    memset(ready_fd_modes, 0, sizeof(int) * MAX_FD_NUM);
+
+    int i=0;
+    if( (mode & 1) > 0 )
+        EV_SET(&changes[i++], fd, EVFILT_READ, EV_DELETE, 0, 0, 0);
+    if( (mode & 2) > 0 )
+        EV_SET(&changes[i++], fd, EVFILT_WRITE, EV_DELETE, 0, 0, 0);
+
+    // just unregister events
+    // supposed to be non-blocking
+    kevent(kq, changes, i, events, MAX_FD_NUM, NULL);
+}
+
 // returns ready_fds's size
 int multiplex_wait(){
+    printf("%s\n", "WAITING");
     int nev = kevent(kq, changes, k, events, MAX_FD_NUM, NULL);
+
     int i;
     for(i=0; i<nev; i++){
         struct kevent event = events[i];
@@ -83,8 +103,10 @@ int multiplex_wait(){
         ready_fds[i] = (int)event.ident;
 
         int mode = 0;
-        if(event.filter == EVFILT_READ) mode = 1;
-        if(event.filter == EVFILT_WRITE) mode = 2;
+        if(event.filter == EVFILT_READ)
+            mode = 1;
+        else if(event.filter == EVFILT_WRITE)
+            mode = 2;
         ready_fd_modes[i] = mode;
     }
     return nev;

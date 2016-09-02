@@ -1,4 +1,5 @@
 require 'ffi'
+require 'json'
 
 ###
 # C wrapper for IO multiplexing functionality
@@ -25,9 +26,13 @@ module Razy
 
     # remember to call this method once a fd is closed
     # otherwise waiting for a closed fd will cause an error
-    def unregister(fd)
-      @@fd_map.delete(fd)
+    def unregister(fd, mode)
+      @@fd_map[fd].delete(mode)
+      @@fd_map.delete(fd) if @@fd_map[fd].keys.length == 0
 
+      # unregister fd from kqueue immediately
+      multiplex_unregister(fd, mode)
+      # normal update
       update_multiplex
     end
 
@@ -45,12 +50,19 @@ module Razy
             fd = multiplex_ready_fd(i)
             mode = multiplex_ready_fd_mode(i)
 
-            task = nil
-            @@fd_map[fd].each do |key, value|
-              if key & mode > 0
-                task = value
-                break
-              end
+            # task = nil
+            # @@fd_map[fd].each do |m, callback|
+            #   if mode & 1 > 0
+            #
+            #     task = callback
+            #     break
+            #   end
+            # end
+
+            task = @@fd_map[fd][mode]
+            if task.nil?
+              puts "Error! mode is #{mode} | @@fd_map[fd] is: \n#{JSON.pretty_generate(@@fd_map[fd])}"
+              next
             end
             task.call
           end
@@ -97,6 +109,7 @@ module Razy
       attach_function(:multiplex_initialize, [], :void)
       attach_function(:multiplex_set, [:pointer,:pointer, :int], :void)
       attach_function(:multiplex_wait, [], :int, :blocking => true)
+      attach_function(:multiplex_unregister, [:int, :int], :void)
       attach_function(:multiplex_ready_fd, [:int], :int)
       attach_function(:multiplex_ready_fd_mode, [:int], :int)
 

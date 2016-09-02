@@ -21,11 +21,24 @@ module Razy
         Razy::Multiplex.register(@fd, 1, read_handler)
       end
 
+      def write(message, &callback)
+        write_handler = proc do
+          @io.write(message)
+
+          # flush immediately so that client
+          # can receive this message asap
+          @io.flush
+          callback.call(nil) unless callback.nil?
+          Razy::Multiplex.unregister(@fd, 2)
+        end
+        Razy::Multiplex.register(@fd, 2, write_handler)
+      end
+
       def end(message, &callback)
         end_handler = proc do
           @io.write(message)
           Razy::Network::close(@io)
-          callback.call(nil) if block_given?
+          callback.call(nil) unless callback.nil?
         end
         Razy::Multiplex.register(@fd, 2, end_handler)
       end
