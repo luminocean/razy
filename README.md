@@ -1,26 +1,30 @@
-Razy - 一个Ruby的异步IO库
+Razy - An asynchronous Ruby IO library
 
-# 1. 为什么要写Razy?
+# 1. Why Razy?
 
-在Ruby的世界中,最常用的异步库是EventMachine。但是EventMachine并不支持普通文件(regular files)的读写API。为了能够在所有文件的读写上支持异步(普通文件,socket,pipe...)才有了Razy
+In the Ruby world, probably the most commonly used async library is EventMachine.
+Unfortunately, EventMachine doesn't support reading and writing for regular files.
+In order to support IO of all kinds of files (including regualr file, pipe, socket, etc.),
+I tried to write Razy.
 
-# 2. 如何实现的?
+# 2. How's razy implemented?
 
-将请求分成两部分处理。对于普通文件请求,交付线程池处理。对于其他请求,使用IO多路复用(IO multiplexing)来实现。
+Simple. Requests are separated into two categories:
+- Requests for regular files are handed over to a thread pool, using simple blocking IO to handle read/write operations.
+- Requests for other files, sockets for example, IO multiplexing is used to handle IO operations.
 
-IO多路复用使用的是kqueue，因此目前只支持OSX(macOS)系统。
-**由于Ruby本身并不支持这样的函数,因此底层使用C实现,编译后使用ffi加载调用。**(相关文件可参考extension目录)
+Since razy is being developed in OSX for now, kqueue is used to do IO multiplexing.
+** Because Ruby don't have native API for kqueue, the underlying infrastructure is implemented in C and is called from Ruby side using ffi**
 
-API参考了Node.js风格。未来可能会支持Promise等方式来改善callback hell的问题。
+Ideas of the API design came from Node.js thus something cool like Promise may also be implemented in razy in the future.
 
-# 3. 目前进展
+# 3. Current Process
 
-对于普通文件的线程池读写已经完成。
-目前正在完善基于kqueue的socket读写。之后会逐步实现基于epoll的对应实现。
+Basic IO for regular files (based on thread pool) and sockets (based on kqueue) have been implemented.
 
-# 4. 使用示例
+# 4. Simple demo
 
-这里给出一个简单的echo server的实现:
+Here's a simple implementation of an echo server:
 
 ```
 require_relative './razy'
@@ -41,7 +45,8 @@ end
 Razy.start(main)
 ```
 
-使用`telnet localhost 8082`连接,测试如下:
+Use `telnet localhost 8082` to connect.
+Here's the output:
 
 ```
 > telnet localhost 8082
