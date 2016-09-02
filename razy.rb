@@ -3,7 +3,7 @@ require_relative 'common'
 require_relative 'io'
 
 module Razy
-  MAX_WAIT_TIME = 10
+  MAX_WAIT_TIME = 30
 
   @@pool = []
   @@mutex = Mutex.new

@@ -14,6 +14,7 @@ Simple. Requests are separated into two categories:
 - Requests for other files, sockets for example, IO multiplexing is used to handle IO operations.
 
 Since razy is being developed in OSX for now, kqueue is used to do IO multiplexing.
+
 ** Because Ruby don't have native API for kqueue, the underlying infrastructure is implemented in C and is called from Ruby side using ffi**
 
 Ideas of the API design came from Node.js thus something cool like Promise may also be implemented in razy in the future.

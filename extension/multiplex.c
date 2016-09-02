@@ -91,7 +91,6 @@ void multiplex_unregister(int fd, int mode){
 
 // returns ready_fds's size
 int multiplex_wait(){
-    printf("%s\n", "WAITING");
     int nev = kevent(kq, changes, k, events, MAX_FD_NUM, NULL);
 
     int i;

@@ -15,7 +15,6 @@ module Razy
     task = proc do
       begin
         content = File.read(file_path)
-
         callback.call(nil, content)
       rescue => ex
         callback(ex)
