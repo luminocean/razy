@@ -1,0 +1,3 @@
+[submodule "extension/kqueuer"]
+	path = extension/kqueuer
+	url = https://github.com/luminocean/kqueuer.git

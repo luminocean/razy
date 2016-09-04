@@ -2,11 +2,11 @@ require_relative 'common'
 require_relative 'extension/multiplex'
 require_relative 'extension/network'
 
-# IO library for Razy
+##
+# IO library of Razy
+##
 
-module Razy
-  module_function
-
+class Razy
   ###
   # File IO
   ###
@@ -45,26 +45,26 @@ module Razy
   ###
 
   def tcp_server(options, &handler)
-    server_fd = Razy::Network.create_tcp_server(options[:port])
+    server_fd = @network.create_tcp_server(options[:port])
     # once a client try to connect this server process
     server_socket_handler = proc do
       # accept incoming client socket
       # this is supposed to be non-blocking
-      client_socket = Razy::Network.accept(server_fd)
+      client_socket = @network.accept(server_fd)
       handler.call(nil, client_socket)
     end
 
     # register the server fd in read mode
-    Razy::Multiplex.register(server_fd, 1, server_socket_handler)
+    @multiplex.register(server_fd, 1, server_socket_handler)
   end
 
-  private_class_method
+  private
 
   # dispatch task to threads in thread pool to handle blocking IO
   def bio_dispatch(task)
     # simply add task to queue
-    @@mutex.synchronize do
-      @@task_queue.push(task)
+    @mutex.synchronize do
+      @task_queue.push(task)
     end
   end
 end
