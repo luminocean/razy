@@ -65,6 +65,7 @@ class Razy
     # simply add task to queue
     @mutex.synchronize do
       @task_queue.push(task)
+      @main_thread_activation.signal
     end
   end
 end

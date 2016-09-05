@@ -27,16 +27,21 @@ class Razy
         while true
           events = @kq.wait
           # nothing returned, done
-          break if events.length == 0
+          if events.length == 0
+            # tell main thread that event loop exits
+            @razy.wakeup_main_thread
+            break
+          end
 
           events.each do |ev|
+            if ev[:data].nil?
+              puts ev
+            end
+
             ev[:data][:callback].call
           end
         end
       end
-
-      # signal main thread just in case
-      @razy.wakeup_main_thread
     end
 
     # 1 for read and 2 for write
